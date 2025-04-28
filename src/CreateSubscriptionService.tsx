@@ -1,20 +1,24 @@
 // Copyright (c), Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { Transaction } from '@mysten/sui/transactions';
+import { coinWithBalance,Transaction } from '@mysten/sui/transactions';
 import { Button, Card, Flex, Text, TextField } from '@radix-ui/themes';
-import { useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
+import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
 import { useState } from 'react';
 import { useNetworkVariable } from './networkConfig';
 import { useNavigate } from 'react-router-dom';
 import { InfoCircledIcon, PlusIcon } from '@radix-ui/react-icons';
 
 export function CreateService() {
-  const [price, setPrice] = useState('');
-  const [ttl, setTtl] = useState('');
+  const [totalSupply, setTotalSupply] = useState('');
+  const [initialSui, setInitialSui] = useState('');
   const [name, setName] = useState('');
-  const [maxSubscribers, setMaxSubscribers] = useState('');
+  const [spaceSymbol, setSpaceSymbol] = useState('');
+  const [spaceDescription, setSpaceDescription] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [minHolding, setMinHolding] = useState('');
   const packageId = useNetworkVariable('packageId');
+  const currentAccount = useCurrentAccount();
   const suiClient = useSuiClient();
   const navigate = useNavigate();
   const { mutate: signAndExecute } = useSignAndExecuteTransaction({
@@ -29,21 +33,32 @@ export function CreateService() {
       }),
   });
 
-  function createService(price: number, ttl: number, name: string) {
-    const maxSubscribersNum = parseInt(maxSubscribers) || 0;
+  function createService(totalSupply: number, initialSui: number, minHolding: number, name: string, symbol: string, description: string, url: string) {
+    if (name === '' || symbol === '' || description === '' || url === '') {
+      alert('Please fill out all of name, symbol, description, and url')
+    }
 
-    if (!price || price <= 0 || !ttl || ttl <= 0 || name === '') {
-      alert('请确保名称、价格和时长都已正确填写，价格和时长必须大于 0。');
+    if (!totalSupply || totalSupply <= 0 || !initialSui || initialSui <= 0 || !minHolding || minHolding <= 0) {
+      alert('Please use a positive number for Total Toke Supply, Initial SUI Liquidity and Min Token Holdings');
       return;
     }
 
-    const ttlMs = ttl * 60 * 1000;
+    const address = currentAccount?.address!;
     const tx = new Transaction();
+    tx.setGasBudget(500000000);
+    tx.setSender(address);
     tx.moveCall({
-      target: `${packageId}::subscription::create_service_entry`,
-      arguments: [tx.pure.u64(price), tx.pure.u64(ttlMs), tx.pure.string(name)],
+      target: `${packageId}::memvault::create_service`,
+      arguments: [
+        tx.pure.string(name),
+        tx.pure.string(symbol),
+        tx.pure.string(description),
+        tx.pure.string(url),
+        tx.pure.u64(totalSupply),
+        coinWithBalance({ balance: BigInt(initialSui)}),
+        tx.pure.u64(minHolding)],
     });
-    tx.setGasBudget(10000000);
+
     signAndExecute(
       {
         transaction: tx,
@@ -111,12 +126,12 @@ export function CreateService() {
           fontSize: '1.8rem',
           letterSpacing: '0.5px',
         }}>
-          创建新的会员层级
+          Create New Space/Token
         </h2>
 
         <label>
           <Text as="div" size="3" weight="medium" mb="1" color="teal" style={{ color: '#006064' }}>
-            空间名称
+            Space Name
           </Text>
           <TextField.Root
             placeholder="例如：基础支持者、核心粉丝"
@@ -135,13 +150,12 @@ export function CreateService() {
 
         <label>
           <Text as="div" size="3" weight="medium" mb="1" color="teal" style={{ color: '#006064' }}>
-            空间代币数量
+            Space Token Symbol
           </Text>
           <TextField.Root
-            type="number"
-            placeholder="例如：500"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
+            placeholder="MyToken"
+            value={spaceSymbol}
+            onChange={(e) => setSpaceSymbol(e.target.value)}
             size="3"
             style={{
               borderRadius: '10px',
@@ -155,13 +169,71 @@ export function CreateService() {
 
         <label>
           <Text as="div" size="3" weight="medium" mb="1" color="teal" style={{ color: '#006064' }}>
-            注入SUI数量
+            Space Description
+          </Text>
+          <TextField.Root
+            placeholder="Space for my blog"
+            value={spaceDescription}
+            onChange={(e) => setSpaceDescription(e.target.value)}
+            size="3"
+            style={{
+              borderRadius: '10px',
+              background: 'rgba(255, 255, 255, 0.85)',
+              border: '1px solid #4dd0e1',
+              boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.05)',
+              color: '#333333',
+            }}
+          />
+        </label>
+
+        <label>
+          <Text as="div" size="3" weight="medium" mb="1" color="teal" style={{ color: '#006064' }}>
+            Space Image URL
+          </Text>
+          <TextField.Root
+            placeholder="https://my_image_url.com"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            size="3"
+            style={{
+              borderRadius: '10px',
+              background: 'rgba(255, 255, 255, 0.85)',
+              border: '1px solid #4dd0e1',
+              boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.05)',
+              color: '#333333',
+            }}
+          />
+        </label>
+
+        <label>
+          <Text as="div" size="3" weight="medium" mb="1" color="teal" style={{ color: '#006064' }}>
+            Token Total Supply
+          </Text>
+          <TextField.Root
+            type="number"
+            placeholder="例如：500"
+            value={totalSupply}
+            onChange={(e) => setTotalSupply(e.target.value)}
+            size="3"
+            style={{
+              borderRadius: '10px',
+              background: 'rgba(255, 255, 255, 0.85)',
+              border: '1px solid #4dd0e1',
+              boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.05)',
+              color: '#333333',
+            }}
+          />
+        </label>
+
+        <label>
+          <Text as="div" size="3" weight="medium" mb="1" color="teal" style={{ color: '#006064' }}>
+            Initial SUI Liquidity
           </Text>
           <TextField.Root
             type="number"
             placeholder="例如：43200 (30天)"
-            value={ttl}
-            onChange={(e) => setTtl(e.target.value)}
+            value={initialSui}
+            onChange={(e) => setInitialSui(e.target.value)}
             size="3"
             style={{
               borderRadius: '10px',
@@ -179,13 +251,13 @@ export function CreateService() {
 
         <label>
           <Text as="div" size="3" weight="medium" mb="1" color="teal" style={{ color: '#006064' }}>
-            最大订阅数量
+            Min Token Holdings
           </Text>
           <TextField.Root
             type="number"
-            placeholder="例如：1000 (留空则无限制)"
-            value={maxSubscribers}
-            onChange={(e) => setMaxSubscribers(e.target.value)}
+            placeholder="eg. 1000"
+            value={minHolding}
+            onChange={(e) => setMinHolding(e.target.value)}
             size="3"
             style={{
               borderRadius: '10px',
@@ -197,7 +269,7 @@ export function CreateService() {
           />
           <Text as="div" size="2" color="gray" mt="2" style={{ color: '#00796b' }}>
             <InfoCircledIcon style={{ verticalAlign: 'middle', marginRight: '4px' }} />
-            限制可以订阅此层级的最大用户数。
+            将用于检查用户的钱包内持有最少数量的空间代币，确认其有资格访问空间内容。
           </Text>
         </label>
 
@@ -207,9 +279,10 @@ export function CreateService() {
           <Button
             size="3"
             onClick={() => {
-              const priceNum = parseInt(price) || 0;
-              const ttlNum = parseInt(ttl) || 0;
-              createService(priceNum, ttlNum, name);
+              const totalSupplyNum = parseInt(totalSupply) || 0;
+              const initialSuiNum = parseInt(initialSui) || 0;
+              const minHoldingNum = parseInt(minHolding) || 0;
+              createService(totalSupplyNum, initialSuiNum, minHoldingNum, name, spaceSymbol, spaceDescription, imageUrl);
             }}
             style={{
               background: 'linear-gradient(135deg, #26c6da 0%, #00acc1 100%)',
