@@ -22,14 +22,17 @@ interface AllowlistProps {
   setCapId: React.Dispatch<React.SetStateAction<string>>;
 }
 
-// --- Color Palette ---
-const deepOceanBlue = 'hsl(210, 40%, 8%)'; // Dark base
-const midnightBlue = 'hsl(210, 35%, 12%)'; // Slightly lighter dark
-const ceruleanBlue = 'hsl(195, 80%, 55%)'; // Accent blue
-const aquaBlue = 'hsl(180, 70%, 75%)'; // Lighter accent/highlight
-const lightText = 'hsl(210, 15%, 95%)'; // Primary text
-const subtleText = 'hsl(210, 15%, 70%)'; // Secondary text
-const shadowColor = 'hsla(210, 40%, 4%, 0.3)'; // Soft shadow
+// --- Refined Color Palette (Inspired by Water & Apple) ---
+const deepOceanBg = 'var(--deep-ocean-bg, #050a1a)'; // Deepest background
+const midnightCardBg = 'var(--midnight-blue-bg, #0f172a)'; // Card background
+const interactiveBlue = 'var(--interactive-blue, #0A84FF)'; // Primary interactive color
+const accentAqua = 'var(--accent-aqua, #00e0ff)'; // Bright accent for highlights
+const primaryText = 'var(--primary-text-color, #f0f4f8)'; // Main text
+const secondaryText = 'var(--secondary-text-color, #a0aec0)'; // Subtle text
+const subtleBorder = 'var(--border-color, rgba(10, 132, 255, 0.2))'; // Border color
+const focusRing = 'var(--focus-ring-color, rgba(10, 132, 255, 0.5))'; // Focus indication
+const cardShadow = 'rgba(0, 0, 0, 0.3)'; // Soft shadow for depth
+const cardHighlightBg = 'rgba(15, 23, 42, 0.8)'; // Slightly lighter bg for sections
 
 export function ManageSpace({ setRecipientAllowlist, setCapId }: AllowlistProps) {
   const suiClient = useSuiClient();
@@ -99,27 +102,29 @@ export function ManageSpace({ setRecipientAllowlist, setCapId }: AllowlistProps)
   return (
     <Box
       style={{
-        padding: 'var(--space-4) 0', // Add some vertical padding around the card
+        padding: 'var(--space-6) var(--space-3)', // Generous vertical padding, standard horizontal
+        background: deepOceanBg, // Use the deepest background for the page area
       }}
     >
       <Card
         style={{
-          background: `linear-gradient(145deg, ${midnightBlue}, ${deepOceanBlue})`,
-          borderRadius: 'var(--radius-4)', // Apple-like rounded corners
-          boxShadow: `0 8px 25px ${shadowColor}`,
-          border: `1px solid ${subtleText}1A`, // Subtle border
-          overflow: 'hidden', // Ensure gradient doesn't bleed
-          maxWidth: '700px', // Limit width for better readability
+          background: `linear-gradient(160deg, ${midnightCardBg} 30%, ${deepOceanBg} 100%)`, // Subtle gradient for depth
+          borderRadius: 'var(--apple-border-radius, 12px)', // Consistent Apple-style rounding
+          boxShadow: `0 10px 30px ${cardShadow}, 0 0 15px var(--subtle-glow-blue, rgba(0, 224, 255, 0.1))`, // Softer shadow + subtle glow
+          border: `1px solid ${subtleBorder}`, // Defined border
+          overflow: 'hidden',
+          maxWidth: '750px', // Slightly wider max-width
           margin: '0 auto', // Center the card
+          backdropFilter: 'blur(5px)', // Subtle blur for background elements if any
         }}
       >
-        <Flex direction="column" gap="5" p="6"> {/* Increased padding and gap */}
+        <Flex direction="column" gap="6" p={{ initial: 'var(--space-5)', sm: 'var(--space-6)' }}> {/* Responsive padding */}
           {/* Header Section */}
           <Flex direction="column" gap="1">
-            <Text size="2" weight="medium" style={{ color: ceruleanBlue }}>
-              SPACE CONTROL PANEL
+            <Text size="2" weight="medium" style={{ color: accentAqua, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Space Control Panel
             </Text>
-            <Heading as="h2" size="7" style={{ color: lightText }}>
+            <Heading as="h2" size={{ initial: '6', sm: '7' }} style={{ color: primaryText, fontWeight: 600 }}>
               {serviceName}
             </Heading>
             {service?.id && (
@@ -128,32 +133,49 @@ export function ManageSpace({ setRecipientAllowlist, setCapId }: AllowlistProps)
                 target="_blank"
                 rel="noopener noreferrer"
                 size="2"
-                style={{ color: subtleText, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '2px' }}
+                style={{
+                  color: secondaryText,
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 'var(--space-1)',
+                  transition: 'color 0.2s ease',
+                }}
+                onMouseOver={(e) => e.currentTarget.style.color = accentAqua}
+                onMouseOut={(e) => e.currentTarget.style.color = secondaryText}
               >
                 View on Explorer <Link2Icon width="14" height="14" />
               </RadixLink>
             )}
           </Flex>
 
-          {/* Share Link Section */}
+          {/* Share Link Section - Enhanced Styling */}
           <Box
             style={{
-              background: `${subtleText}10`, // Slightly different background for emphasis
+              background: cardHighlightBg, // Use the highlight background
               padding: 'var(--space-4)',
-              borderRadius: 'var(--radius-3)',
-              border: `1px solid ${subtleText}20`,
+              borderRadius: 'var(--radius-3)', // Slightly smaller radius for inner elements
+              border: `1px solid ${subtleBorder}`,
             }}
           >
             <Flex align="center" gap="3">
-              <InfoCircledIcon width="20" height="20" style={{ color: aquaBlue, flexShrink: 0 }} />
-              <Text size="3" style={{ color: lightText }}>
+              <InfoCircledIcon width="22" height="22" style={{ color: accentAqua, flexShrink: 0 }} />
+              <Text size="3" style={{ color: primaryText, lineHeight: '1.5' }}>
                 Share{' '}
                 <RadixLink
                   href={`${window.location.origin}/subscription-example/view/service/${service?.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   weight="medium"
-                  style={{ color: ceruleanBlue, textDecoration: 'underline', textUnderlineOffset: '3px' }}
+                  style={{
+                    color: interactiveBlue,
+                    textDecoration: 'none', // Remove default underline
+                    borderBottom: `1px dashed ${interactiveBlue}`, // Custom underline
+                    paddingBottom: '1px',
+                    transition: 'color 0.2s ease, border-color 0.2s ease',
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.color = accentAqua; e.currentTarget.style.borderColor = accentAqua; }}
+                  onMouseOut={(e) => { e.currentTarget.style.color = interactiveBlue; e.currentTarget.style.borderColor = interactiveBlue; }}
                   aria-label="Shareable link to view this space"
                 >
                   this public link
@@ -163,36 +185,36 @@ export function ManageSpace({ setRecipientAllowlist, setCapId }: AllowlistProps)
             </Flex>
           </Box>
 
-          {/* Details Section */}
+          {/* Details Section - Refined Grid Layout */}
           <Grid columns={{ initial: '1', sm: '2' }} gap="4">
-            <Box
-              style={{
-                background: `${subtleText}1A`,
-                padding: 'var(--space-3)',
-                borderRadius: 'var(--radius-2)',
-              }}
-            >
-              <Text as="div" size="2" weight="medium" style={{ color: subtleText, marginBottom: 'var(--space-1)' }}>
-                Subscription Duration
-              </Text>
-              <Text size="5" weight="bold" style={{ color: lightText }}>
-                {serviceTtlMinutes > 0 ? `${serviceTtlMinutes} minutes` : 'Not Set'}
-              </Text>
-            </Box>
-            <Box
-              style={{
-                background: `${subtleText}1A`,
-                padding: 'var(--space-3)',
-                borderRadius: 'var(--radius-2)',
-              }}
-            >
-              <Text as="div" size="2" weight="medium" style={{ color: subtleText, marginBottom: 'var(--space-1)' }}>
-                Subscription Fee
-              </Text>
-              <Text size="5" weight="bold" style={{ color: lightText }}>
-                {service?.fee !== undefined ? `${service.fee} MIST` : 'Not Set'}
-              </Text>
-            </Box>
+            {/* Detail Item Box - Reusable Style */}
+            {(['Subscription Duration', 'Subscription Fee'] as const).map((label) => {
+              const value = label === 'Subscription Duration'
+                ? (serviceTtlMinutes > 0 ? `${serviceTtlMinutes} minutes` : 'Not Set')
+                : (service?.fee !== undefined ? `${service.fee} MIST` : 'Not Set');
+
+              return (
+                <Box
+                  key={label}
+                  style={{
+                    background: cardHighlightBg,
+                    padding: 'var(--space-4)', // Increased padding
+                    borderRadius: 'var(--radius-3)',
+                    border: `1px solid ${subtleBorder}`,
+                    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 4px 10px ${cardShadow}`; }}
+                  onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+                >
+                  <Text as="div" size="2" weight="medium" style={{ color: secondaryText, marginBottom: 'var(--space-2)' }}>
+                    {label}
+                  </Text>
+                  <Text size="5" weight="bold" style={{ color: primaryText }}>
+                    {value}
+                  </Text>
+                </Box>
+              );
+            })}
           </Grid>
         </Flex>
       </Card>

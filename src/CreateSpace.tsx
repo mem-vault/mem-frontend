@@ -3,19 +3,12 @@
 // 用到了，用于创建space
 
 import { Transaction } from '@mysten/sui/transactions';
-import { Button, Card, Flex, Heading, TextField, Text, Box } from '@radix-ui/themes'; // Import Box for potential styling wrappers
+import { Button, Card, Flex, Heading, TextField, Text, Box } from '@radix-ui/themes';
 import { useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
 import { useState } from 'react';
 import { useNetworkVariable } from './networkConfig';
 import { useNavigate } from 'react-router-dom';
-
-// Define some theme colors (ideally move these to a theme file)
-const deepBlueBlack = '#0A101A';
-const accentBlue = '#0A84FF';
-const subtleBlueGray = '#55667D';
-const lightText = '#E1E1E6';
-const inputBg = 'rgba(40, 40, 60, 0.5)';
-const placeholderBlue = '#509BFF';
+// Removed local color constants, will use global CSS variables from global.css
 
 export function CreateSpace() {
   const [price, setPrice] = useState('');
@@ -41,6 +34,7 @@ export function CreateSpace() {
     const ttlNum = parseInt(ttlStr); // TTL in minutes
 
     if (!nameStr || isNaN(priceNum) || priceNum <= 0 || isNaN(ttlNum) || ttlNum <= 0) {
+      // Consider using a more integrated notification system than alert()
       alert('Please fill in all fields with valid numbers (Price and Duration must be positive).');
       return;
     }
@@ -66,21 +60,20 @@ export function CreateSpace() {
           const createdObjectId = subscriptionObject?.reference?.objectId;
 
           if (createdObjectId) {
-            // Generate random avatar URL
-            const randomAvatarId = Math.floor(Math.random() * 70) + 1; // Pravatar has images 1-70
-            const avatarUrl = `https://i.pravatar.cc/150?img=${randomAvatarId}`;
+            // Use a more robust avatar generation, e.g., DiceBear from SpaceScroll
+            const seed = encodeURIComponent(createdObjectId);
+            const avatarUrl = `https://api.dicebear.com/8.x/rings/svg?seed=${seed}&backgroundColor=0f172a,020817&backgroundType=gradientLinear&ringColor=00f5ff,bae6fd`;
 
-            // Store details in localStorage
             const newSpaceData = {
-              id: createdObjectId, // Store ID as well if needed later
+              id: createdObjectId,
               name: nameStr,
-              price: priceNum, // Store the number
+              price: priceNum,
               duration: ttlNum, // Store duration in minutes
               avatarUrl: avatarUrl,
             };
+            // Consider a more persistent storage if needed beyond immediate navigation
             localStorage.setItem('newlyCreatedSpaceData', JSON.stringify(newSpaceData));
 
-            // Navigate back to home page
             navigate('/');
           } else {
             console.error('Could not find created object ID in transaction effects.');
@@ -97,86 +90,64 @@ export function CreateSpace() {
   }
 
   return (
-    <Flex justify="center" align="center" style={{ minHeight: '80vh', background: deepBlueBlack /* Apply base background */ }}>
-      <Card style={{
-        maxWidth: '450px', // Slightly wider for better spacing
-        width: '100%',
-        background: `linear-gradient(180deg, #0D1B2A 0%, ${deepBlueBlack} 100%)`, // Subtle gradient
-        borderRadius: '16px', // More pronounced rounding
-        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)', // Softer, deeper shadow
-        padding: '32px', // More padding
-        border: `1px solid ${subtleBlueGray}` // Subtle border
-      }}>
-        <Heading as="h2" size="7" mb="5" align="center" style={{ color: lightText, fontWeight: 600 }}>
+    // Use Flex to center the card vertically and horizontally within the viewport
+    <Flex justify="center" align="center" style={{ minHeight: 'calc(100vh - 80px)', padding: 'var(--space-4)' }}> {/* Adjust minHeight based on header/footer */}
+      {/* Apply the global water-card style */}
+      <Card className="water-card" style={{ maxWidth: '480px', width: '100%', padding: 'var(--space-6)' }}>
+        <Heading as="h2" size="7" mb="6" align="center" style={{ color: 'var(--primary-text-color)', fontWeight: 600 }}>
           Create Your Space
         </Heading>
-        <Flex direction="column" gap="4"> {/* Increased gap */}
-          <label>
-            <Text as="div" size="2" mb="1" weight="bold" style={{ color: subtleBlueGray }}>
-              Space Name:
+        <Flex direction="column" gap="5"> {/* Increased gap for better spacing */}
+          {/* Use Box for label + input grouping */}
+          <Box>
+            <Text as="label" htmlFor="spaceName" size="2" mb="1" weight="medium" style={{ color: 'var(--secondary-text-color)', display: 'block' }}>
+              Space Name
             </Text>
+            {/* Input fields will inherit global styles */}
             <TextField.Root
+              id="spaceName"
               placeholder="Name your digital ocean..."
               value={name}
               onChange={(e) => setName(e.target.value)}
-              style={{
-                background: inputBg,
-                color: lightText,
-                borderRadius: '8px',
-                border: '1px solid transparent', // Hide default border
-                padding: '10px 12px', // Adjust padding
-              }}
+              size="3" // Use Radix size prop
             />
-          </label>
-          <label>
-            <Text as="div" size="2" mb="1" weight="bold" style={{ color: subtleBlueGray }}>
-              Subscription Price (MIST):
+          </Box>
+          <Box>
+            <Text as="label" htmlFor="subPrice" size="2" mb="1" weight="medium" style={{ color: 'var(--secondary-text-color)', display: 'block' }}>
+              Subscription Price (MIST)
             </Text>
             <TextField.Root
+              id="subPrice"
               type="number"
               placeholder="e.g., 1000"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              style={{
-                background: inputBg,
-                color: lightText,
-                borderRadius: '8px',
-                border: '1px solid transparent',
-                padding: '10px 12px',
-              }}
+              size="3"
             />
-          </label>
-          <label>
-            <Text as="div" size="2" mb="1" weight="bold" style={{ color: subtleBlueGray }}>
-              Duration (minutes):
+          </Box>
+          <Box>
+            <Text as="label" htmlFor="duration" size="2" mb="1" weight="medium" style={{ color: 'var(--secondary-text-color)', display: 'block' }}>
+              Duration (minutes)
             </Text>
             <TextField.Root
+              id="duration"
               type="number"
-              placeholder="e.g., 60"
+              placeholder="e.g., 43200 (for 30 days)" // Provide a more common example
               value={ttl}
               onChange={(e) => setTtl(e.target.value)}
-              style={{
-                background: inputBg,
-                color: lightText,
-                borderRadius: '8px',
-                border: '1px solid transparent',
-                padding: '10px 12px',
-              }}
-            />
-          </label>
-          <Flex direction="row" gap="3" justify="end" mt="5"> {/* Increased margin-top */}
-            <Button
               size="3"
+            />
+            <Text as="p" size="1" mt="1" style={{ color: 'var(--secondary-text-color)' }}>
+              Time until subscription expires.
+            </Text>
+          </Box>
+          <Flex direction="row" justify="end" mt="5">
+            {/* Apply the global primary button style */}
+            <Button
+              size="3" // Consistent button size
+              className="water-button-primary" // Use global class
               onClick={() => createService(price, ttl, name)}
-              style={{
-                background: `linear-gradient(to bottom, ${accentBlue}, #0066CC)`, // Blue gradient
-                color: 'white',
-                borderRadius: '8px',
-                padding: '10px 20px',
-                fontWeight: 500,
-                boxShadow: `0 4px 15px rgba(10, 132, 255, 0.3)`, // Subtle blue glow
-                transition: 'transform 0.2s ease, background 0.2s ease', // Smooth transition
-              }}
+              disabled={!name || !price || !ttl} // Basic validation for button state
             >
               Launch Space
             </Button>
