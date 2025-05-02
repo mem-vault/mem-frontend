@@ -123,13 +123,13 @@ export function WalrusUpload({ policyObject, cap_id, moduleName }: WalrusUploadP
       alert('File size must be less than 10 MiB');
       return;
     }
-    // Check if file type is allowed
-    const allowedExtensions = ['.json']; // Keep only .json
+    // 更新文件类型限制，支持更多格式
+    const allowedExtensions = ['.json', '.jpg', '.jpeg', '.png', '.gif', '.svg', '.txt', '.md'];
     const fileExtension = file.name.slice(((file.name.lastIndexOf(".") - 1) >>> 0) + 2); // Get file extension including the dot
     const isAllowedExtension = allowedExtensions.includes(`.${fileExtension.toLowerCase()}`);
 
-    if (!isAllowedExtension) { // Update condition
-      alert('Only .json files are allowed'); // Update alert message
+    if (!isAllowedExtension) {
+      alert('Only JSON, images (JPG, PNG, GIF, SVG), and text files (TXT, MD) are allowed');
       return;
     }
     setFile(file);
@@ -147,12 +147,23 @@ export function WalrusUpload({ policyObject, cap_id, moduleName }: WalrusUploadP
             const nonce = crypto.getRandomValues(new Uint8Array(5));
             const policyObjectBytes = fromHex(policyObject);
             const id = toHex(new Uint8Array([...policyObjectBytes, ...nonce]));
+
+            // 将文件类型与数据一起打包
+            const dataWithType = {
+              type: file.type,
+              content: Array.from(new Uint8Array(result)) // 转换为数组以便JSON序列化
+            };
+
+            // 序列化数据包
+            const serializedData = JSON.stringify(dataWithType);
+
             const { encryptedObject: encryptedBytes } = await client.encrypt({
               threshold: 2,
               packageId,
               id,
-              data: new Uint8Array(result),
+              data: new TextEncoder().encode(serializedData), // 加密序列化后的数据
             });
+
             const storageInfo = await storeBlob(encryptedBytes);
             displayUpload(storageInfo.info, file.type);
             setIsUploading(false);
@@ -270,17 +281,17 @@ export function WalrusUpload({ policyObject, cap_id, moduleName }: WalrusUploadP
           </Flex>
           <label className={`custom-file-upload ${!!info ? 'disabled' : ''}`}>
             <input
-              ref={fileInputRef} // Assign ref
+              ref={fileInputRef}
               type="file"
               onChange={handleFileChange}
-              accept=".json" // Change accept attribute
+              accept=".json,.jpg,.jpeg,.png,.gif,.svg,.txt,.md" // 更新接受的文件类型
               aria-label="Choose file to upload"
-              disabled={!!info || isUploading} // Disable file input after upload or during upload
+              disabled={!!info || isUploading}
             />
             <span className="upload-icon">💧</span>
             <span className="upload-text">{file ? file.name : 'Click or drag file here'}</span>
           </label>
-          <Text size="1" className="hint-text">Max 10 MiB. Allowed types: .json</Text>
+          <Text size="1" className="hint-text">Max 10 MiB. Allowed types: JSON, images, and text files</Text>
           <Button
             onClick={handleSubmit}
             disabled={file === null || isUploading || !!info} // Keep disabled after successful upload (info is set)

@@ -47,40 +47,62 @@ const formatFee = (feeMist?: string): string => {
   return `${sui.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} SUI`;
 };
 
-// Helper component to display JSON content and provide download link
-const JsonFileDisplay: React.FC<{ url: string; index: number }> = ({ url, index }) => {
-  const [jsonData, setJsonData] = useState<any>(null);
+// 改进的组件，可以显示多种文件类型
+const FileDisplay: React.FC<{ url: string; index: number }> = ({ url, index }) => {
+  const [fileData, setFileData] = useState<any>(null);
+  const [fileType, setFileType] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchJson = async () => {
+    const fetchFile = async () => {
       setIsLoading(true);
       setError(null);
       try {
+        // 首先确定文件类型
         const response = await fetch(url);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const data = await response.json();
-        setJsonData(data);
+
+        const contentType = response.headers.get('content-type') || '';
+        setFileType(contentType);
+
+        // 基于内容类型处理数据
+        if (contentType.includes('application/json')) {
+          const data = await response.json();
+          setFileData(data);
+        } else {
+          // 对于其他类型，我们只存储URL
+          setFileData(url);
+        }
       } catch (e: any) {
-        console.error("Failed to fetch or parse JSON:", e);
-        setError(`Failed to load JSON file: ${e.message}`);
+        console.error("Failed to fetch or parse file:", e);
+        setError(`Failed to load file: ${e.message}`);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchJson();
+    fetchFile();
   }, [url]);
+
+  // 确定文件的扩展名
+  const getFileExtension = () => {
+    if (fileType.includes('image/')) return 'image';
+    if (fileType.includes('application/json')) return 'json';
+    if (fileType.includes('text/')) return 'txt';
+    return 'file'; // 默认扩展名
+  };
+
+  const extension = getFileExtension();
 
   return (
     <Box my="1" p="3" style={{ border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--deep-ocean-bg-secondary)' }}>
       <Flex direction="column" gap="2">
         <Flex justify="between" align="center">
           <Text weight="medium" style={{ color: 'var(--primary-text-color)' }}>File {index + 1}</Text>
-          <Flex gap="2"> {/* Added Flex wrapper for buttons */}
+          <Flex gap="2">
             <Button
               size="1"
               variant="soft"
@@ -88,40 +110,82 @@ const JsonFileDisplay: React.FC<{ url: string; index: number }> = ({ url, index 
               style={{ cursor: 'pointer' }}
               className="water-button-soft"
             >
-              <a href={url} download={`decrypted_file_${index + 1}.json`}>
-                Download JSON
+              <a href={url} download={`decrypted_file_${index + 1}.${extension}`}>
+                Download {extension.toUpperCase()}
               </a>
             </Button>
-            <Button
-              size="1"
-              variant="soft"
-              asChild
-              style={{ cursor: 'pointer' }}
-              className="water-button-soft"
-            >
-              <a href="https://www.brainsdance.com/" target="_blank" rel="noopener noreferrer">
-                chat with JSON
-              </a>
-            </Button>
+            {extension === 'json' && (
+              <Button
+                size="1"
+                variant="soft"
+                asChild
+                style={{ cursor: 'pointer' }}
+                className="water-button-soft"
+              >
+                <a href="https://www.brainsdance.com/" target="_blank" rel="noopener noreferrer">
+                  chat with JSON
+                </a>
+              </Button>
+            )}
           </Flex>
         </Flex>
         <Separator size="4" my="1" style={{ background: 'var(--border-color-secondary)' }} />
-        {isLoading && <Flex align="center" gap="2"><Spinner size="1" /><Text size="2" style={{ color: 'var(--secondary-text-color)' }}>Loading JSON...</Text></Flex>}
+        {isLoading && <Flex align="center" gap="2"><Spinner size="1" /><Text size="2" style={{ color: 'var(--secondary-text-color)' }}>Loading file...</Text></Flex>}
         {error && <Text size="2" color="tomato">{error}</Text>}
-        {!isLoading && !error && jsonData && (
-          <pre style={{
-            background: 'var(--code-bg)',
-            padding: '10px',
-            borderRadius: '4px',
-            maxHeight: '200px',
-            overflowY: 'auto',
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-all',
-            color: 'var(--code-text-color)',
-            fontSize: 'var(--font-size-1)'
-          }}>
-            <code>{JSON.stringify(jsonData, null, 2)}</code>
-          </pre>
+        {!isLoading && !error && (
+          <>
+            {fileType.includes('image/') && (
+              <Box style={{ textAlign: 'center' }}>
+                <img
+                  src={url}
+                  alt={`File ${index + 1}`}
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '300px',
+                    objectFit: 'contain',
+                    borderRadius: '4px'
+                  }}
+                />
+              </Box>
+            )}
+            {fileType.includes('application/json') && (
+              <pre style={{
+                background: 'var(--code-bg)',
+                padding: '10px',
+                borderRadius: '4px',
+                maxHeight: '200px',
+                overflowY: 'auto',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-all',
+                color: 'var(--code-text-color)',
+                fontSize: 'var(--font-size-1)'
+              }}>
+                <code>{JSON.stringify(fileData, null, 2)}</code>
+              </pre>
+            )}
+            {fileType.includes('text/') && !fileType.includes('application/json') && (
+              <pre style={{
+                background: 'var(--code-bg)',
+                padding: '10px',
+                borderRadius: '4px',
+                maxHeight: '200px',
+                overflowY: 'auto',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-all',
+                color: 'var(--code-text-color)',
+                fontSize: 'var(--font-size-1)'
+              }}>
+                <Text>{fileData}</Text>
+              </pre>
+            )}
+            {!fileType.includes('image/') && !fileType.includes('application/json') && !fileType.includes('text/') && (
+              <Flex align="center" justify="center" p="4">
+                <Text size="2" style={{ color: 'var(--secondary-text-color)' }}>
+                  File preview not available. Please download to view.
+                </Text>
+              </Flex>
+            )}
+          </>
         )}
       </Flex>
     </Box>
@@ -536,7 +600,7 @@ const SpaceInfo: React.FC<{ suiAddress: string }> = ({ suiAddress }) => {
                 {!isLoadingAction && decryptedFileUrls.length > 0 && !error && (
                   <Flex direction="column" gap="3">
                     {decryptedFileUrls.map((decryptedFileUrl, index) => (
-                      <JsonFileDisplay key={index} url={decryptedFileUrl} index={index} />
+                      <FileDisplay key={index} url={decryptedFileUrl} index={index} />
                     ))}
                   </Flex>
                 )}

@@ -80,13 +80,30 @@ export const downloadAndDecrypt = async (
     const txBytes = await tx.build({ client: suiClient, onlyTransactionKind: true });
     try {
       // Note that all keys are fetched above, so this only local decryption is done
-      const decryptedFile = await sealClient.decrypt({
+      const decryptedData = await sealClient.decrypt({
         data: new Uint8Array(encryptedData),
         sessionKey,
         txBytes,
       });
-      const blob = new Blob([decryptedFile], { type: 'application/json' }); // Change type to application/json
-      decryptedFileUrls.push(URL.createObjectURL(blob));
+
+      // 解析解密后的数据包
+      try {
+        const dataString = new TextDecoder().decode(decryptedData);
+        const parsedData = JSON.parse(dataString);
+
+        // 提取文件类型和内容
+        const { type, content } = parsedData;
+        const contentArray = new Uint8Array(content);
+
+        // 创建正确类型的Blob
+        const blob = new Blob([contentArray], { type: type || 'application/json' });
+        decryptedFileUrls.push(URL.createObjectURL(blob));
+      } catch (parseErr) {
+        // 如果解析失败，回退到原来的处理方式
+        console.error("Error parsing decrypted data:", parseErr);
+        const blob = new Blob([decryptedData], { type: 'application/json' });
+        decryptedFileUrls.push(URL.createObjectURL(blob));
+      }
     } catch (err) {
       console.log(err);
       const errorMsg =
