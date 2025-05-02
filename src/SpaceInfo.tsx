@@ -1,6 +1,6 @@
 // Copyright (c), Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   useCurrentAccount,
   useSignAndExecuteTransaction,
@@ -45,6 +45,87 @@ const formatFee = (feeMist?: string): string => {
   if (isNaN(feeNum)) return 'N/A';
   const sui = feeNum / 1_000_000_000;
   return `${sui.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} SUI`;
+};
+
+// Helper component to display JSON content and provide download link
+const JsonFileDisplay: React.FC<{ url: string; index: number }> = ({ url, index }) => {
+  const [jsonData, setJsonData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchJson = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setJsonData(data);
+      } catch (e: any) {
+        console.error("Failed to fetch or parse JSON:", e);
+        setError(`Failed to load JSON file: ${e.message}`);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchJson();
+  }, [url]);
+
+  return (
+    <Box my="1" p="3" style={{ border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--deep-ocean-bg-secondary)' }}>
+      <Flex direction="column" gap="2">
+        <Flex justify="between" align="center">
+          <Text weight="medium" style={{ color: 'var(--primary-text-color)' }}>File {index + 1}</Text>
+          <Flex gap="2"> {/* Added Flex wrapper for buttons */}
+            <Button
+              size="1"
+              variant="soft"
+              asChild
+              style={{ cursor: 'pointer' }}
+              className="water-button-soft"
+            >
+              <a href={url} download={`decrypted_file_${index + 1}.json`}>
+                Download JSON
+              </a>
+            </Button>
+            <Button
+              size="1"
+              variant="soft"
+              asChild
+              style={{ cursor: 'pointer' }}
+              className="water-button-soft"
+            >
+              <a href="https://www.brainsdance.com/" target="_blank" rel="noopener noreferrer">
+                chat with JSON
+              </a>
+            </Button>
+          </Flex>
+        </Flex>
+        <Separator size="4" my="1" style={{ background: 'var(--border-color-secondary)' }} />
+        {isLoading && <Flex align="center" gap="2"><Spinner size="1" /><Text size="2" style={{ color: 'var(--secondary-text-color)' }}>Loading JSON...</Text></Flex>}
+        {error && <Text size="2" color="tomato">{error}</Text>}
+        {!isLoading && !error && jsonData && (
+          <pre style={{
+            background: 'var(--code-bg)',
+            padding: '10px',
+            borderRadius: '4px',
+            maxHeight: '200px',
+            overflowY: 'auto',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-all',
+            color: 'var(--code-text-color)',
+            fontSize: 'var(--font-size-1)'
+          }}>
+            <code>{JSON.stringify(jsonData, null, 2)}</code>
+          </pre>
+        )}
+      </Flex>
+    </Box>
+  );
 };
 
 const SpaceInfo: React.FC<{ suiAddress: string }> = ({ suiAddress }) => {
@@ -391,6 +472,7 @@ const SpaceInfo: React.FC<{ suiAddress: string }> = ({ suiAddress }) => {
           <Dialog.Root open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
             if (!open) {
+              decryptedFileUrls.forEach(url => URL.revokeObjectURL(url));
               setDecryptedFileUrls([]);
               setError(null);
               setIsLoadingAction(false);
@@ -412,7 +494,7 @@ const SpaceInfo: React.FC<{ suiAddress: string }> = ({ suiAddress }) => {
                     </>
                   ) : (
                     <>
-                      <LockClosedIcon style={{ marginRight: '8px' }} /> Subscribe)
+                      <LockClosedIcon style={{ marginRight: '8px' }} /> Subscribe
                     </>
                   )}
                 </Button>
@@ -423,43 +505,43 @@ const SpaceInfo: React.FC<{ suiAddress: string }> = ({ suiAddress }) => {
                 background: 'var(--midnight-blue-bg)',
                 borderRadius: 'var(--apple-border-radius)',
                 border: '1px solid var(--border-color)',
-                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)'
+                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
+                maxWidth: '80vw',
+                maxHeight: '80vh',
+                display: 'flex',
+                flexDirection: 'column'
               }}
               key={reloadKey}
             >
               <Dialog.Title asChild>
-                <Heading size="5" style={{ color: 'var(--primary-text-color)' }}>
+                <Heading size="5" style={{ color: 'var(--primary-text-color)', flexShrink: 0 }}>
                   {error ? "Error" : (decryptedFileUrls.length > 0 ? "Retrieved Files" : "Processing...")}
                 </Heading>
               </Dialog.Title>
-              <Separator size="4" my="3" style={{ background: 'var(--border-color)' }} />
-              {isLoadingAction && decryptedFileUrls.length === 0 && !error && (
-                <Flex direction="column" align="center" justify="center" gap="3" minHeight="150px">
-                  <Spinner size="3" />
-                  <Text size="3" style={{ color: 'var(--secondary-text-color)' }}>
-                    {currentSessionKey ? "Decrypting content..." : "Preparing secure session..."}
+              <Separator size="4" my="3" style={{ background: 'var(--border-color)', flexShrink: 0 }} />
+              <Box style={{ overflowY: 'auto', flexGrow: 1 }}>
+                {isLoadingAction && decryptedFileUrls.length === 0 && !error && (
+                  <Flex direction="column" align="center" justify="center" gap="3" minHeight="150px">
+                    <Spinner size="3" />
+                    <Text size="3" style={{ color: 'var(--secondary-text-color)' }}>
+                      {currentSessionKey ? "Decrypting content..." : "Preparing secure session..."}
+                    </Text>
+                  </Flex>
+                )}
+                {error && (
+                  <Text size="3" style={{ color: 'var(--tomato-11)' }}>
+                    {error}
                   </Text>
-                </Flex>
-              )}
-              {error && (
-                <Text size="3" style={{ color: 'var(--tomato-11)' }}>
-                  {error}
-                </Text>
-              )}
-              {!isLoadingAction && decryptedFileUrls.length > 0 && !error && (
-                <Flex direction="column" gap="3" style={{ maxHeight: '50vh', overflowY: 'auto', padding: '5px', marginRight: '-10px', paddingRight: '10px' }}>
-                  {decryptedFileUrls.map((decryptedFileUrl, index) => (
-                    <Box key={index} my="1" style={{ border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden' }}>
-                      <img
-                        src={decryptedFileUrl}
-                        alt={`Decrypted content ${index + 1}`}
-                        style={{ display: 'block', maxWidth: '100%', borderRadius: '7px' }}
-                      />
-                    </Box>
-                  ))}
-                </Flex>
-              )}
-              <Flex gap="3" mt="4" justify="end">
+                )}
+                {!isLoadingAction && decryptedFileUrls.length > 0 && !error && (
+                  <Flex direction="column" gap="3">
+                    {decryptedFileUrls.map((decryptedFileUrl, index) => (
+                      <JsonFileDisplay key={index} url={decryptedFileUrl} index={index} />
+                    ))}
+                  </Flex>
+                )}
+              </Box>
+              <Flex gap="3" mt="4" justify="end" style={{ flexShrink: 0 }}>
                 <Dialog.Close>
                   <Button variant="soft" className="water-button-soft">
                     Close

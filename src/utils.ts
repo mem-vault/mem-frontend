@@ -85,7 +85,7 @@ export const downloadAndDecrypt = async (
         sessionKey,
         txBytes,
       });
-      const blob = new Blob([decryptedFile], { type: 'image/jpg' });
+      const blob = new Blob([decryptedFile], { type: 'application/json' }); // Change type to application/json
       decryptedFileUrls.push(URL.createObjectURL(blob));
     } catch (err) {
       console.log(err);

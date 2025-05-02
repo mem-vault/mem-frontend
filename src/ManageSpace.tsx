@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // 用到了是上传页面的地方
 import { useCurrentAccount, useSuiClient } from '@mysten/dapp-kit';
-import { Card, Flex, Text, Heading, Box, Link as RadixLink, Grid } from '@radix-ui/themes'; // Import necessary Radix components
+// 从 @radix-ui/themes 导入 Button
+import { Card, Flex, Text, Heading, Box, Link as RadixLink, Grid, Button } from '@radix-ui/themes'; // Import necessary Radix components
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useNetworkVariable } from './networkConfig';
@@ -216,6 +217,26 @@ export function ManageSpace({ setRecipientAllowlist, setCapId }: AllowlistProps)
               );
             })}
           </Grid>
+
+          {/* 新增按钮 */}
+          <Flex justify="center" mt="4"> {/* 添加一些上边距 */}
+            <RadixLink href="https://www.brainsdance.com/" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+              <Button
+                size="3"
+                style={{
+                  cursor: 'pointer',
+                  backgroundColor: interactiveBlue, // 使用主题颜色
+                  color: primaryText, // 使用主题文本颜色
+                  fontWeight: 500,
+                  transition: 'background-color 0.2s ease',
+                }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = accentAqua} // 悬停效果
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = interactiveBlue} // 恢复原色
+              >
+                create memory with braindance
+              </Button>
+            </RadixLink>
+          </Flex>
         </Flex>
       </Card>
     </Box>

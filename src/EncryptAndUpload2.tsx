@@ -233,17 +233,7 @@ export function WalrusUpload({ policyObject, cap_id, moduleName }: WalrusUploadP
         onSuccess: async (result) => {
           console.log('res', result);
           alert('Blob attached successfully, now share the link or upload more.');
-          // Reset state after successful publish
-          setFile(null);
-          setInfo(null);
-          if (fileInputRef.current) {
-            fileInputRef.current.value = ''; // Clear the file input
-          }
         },
-        onError: (error) => {
-          console.error("Error publishing:", error);
-          alert("Failed to associate file. Please try again.");
-        }
       },
     );
   }
@@ -268,22 +258,22 @@ export function WalrusUpload({ policyObject, cap_id, moduleName }: WalrusUploadP
               ))}
             </select>
           </Flex>
-          <label className={`custom-file-upload ${!!info ? 'disabled' : ''}`}>
+          <label className="custom-file-upload">
             <input
               ref={fileInputRef} // Assign ref
               type="file"
               onChange={handleFileChange}
               accept=".json" // Change accept attribute
               aria-label="Choose file to upload"
-              disabled={!!info || isUploading} // Disable file input after upload or during upload
+              disabled={!!info} // Disable file input after upload
             />
             <span className="upload-icon">💧</span>
             <span className="upload-text">{file ? file.name : 'Click or drag file here'}</span>
           </label>
-          <Text size="1" className="hint-text">Max 10 MiB. Allowed types: .json</Text>
+          <Text size="1" className="hint-text">Max 10 MiB. Allowed types: .json</Text> // Update hint text
           <Button
             onClick={handleSubmit}
-            disabled={file === null || isUploading || !!info} // Keep disabled after successful upload (info is set)
+            disabled={file === null || isUploading}
             className="action-button primary-button"
             size="3"
           >
@@ -315,7 +305,7 @@ export function WalrusUpload({ policyObject, cap_id, moduleName }: WalrusUploadP
             </Box>
             <Button
               onClick={() => handlePublish(policyObject, cap_id, moduleName)}
-              disabled={!info || !file || policyObject === ''} // Keep existing disabled logic
+              disabled={!info || !file || policyObject === ''}
               className="action-button secondary-button"
               size="3"
             >
