@@ -11,7 +11,6 @@ import { CreateSpace } from './CreateSpace';
 import SpaceInfo from './SpaceInfo';
 import { ManageSpace } from './ManageSpace';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-import SubscribedSpaces from './SubscribedSpaces';
 import { OwnedSpaces } from './OwnedSpaces';
 import SpaceScroll from './SpaceScroll';
 import './global.css'; // 引入全局样式
@@ -89,12 +88,7 @@ function App() {
           <Flex gap="4" align="center">
             {currentAccount && (
               <Link to="/subscription-example/admin/services">
-                <Button className="water-button-soft">My Spaces</Button>
-              </Link>
-            )}
-            {currentAccount && (
-              <Link to="/subscription-example/subscribed">
-                <Button className="water-button-soft">My Subscriptions</Button>
+                <Button className="water-button-soft">My Space</Button>
               </Link>
             )}
             <Box>
@@ -137,7 +131,6 @@ function App() {
                       }
                     />
                     <Route path="/admin/services" element={<OwnedSpaces />} />
-                    <Route path="/subscribed" element={<SubscribedSpaces />} />
                     <Route
                       path="/view/service/:id"
                       element={<SpaceInfo suiAddress={currentAccount.address} />}
